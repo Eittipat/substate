@@ -154,6 +154,6 @@ func (m londonMessage) toMessage() *Message {
 		InitCodeHash: m.InitCodeHash,
 		AccessList:   m.AccessList,
 		GasFeeCap:    m.GasFeeCap,
-		GasTipCap:    m.GasFeeCap,
+		GasTipCap:    m.GasTipCap,
 	}
 }
