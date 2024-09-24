@@ -72,6 +72,10 @@ func TestSubstateDB_GetSubstate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	testSubstateDB_GetSubstate(db, t)
+}
+
+func testSubstateDB_GetSubstate(db *substateDB, t *testing.T) {
 	ss, err := db.GetSubstate(37_534_834, 1)
 	if err != nil {
 		t.Fatalf("get substate returned error; %v", err)
@@ -84,6 +88,7 @@ func TestSubstateDB_GetSubstate(t *testing.T) {
 	if err = ss.Equal(testSubstate); err != nil {
 		t.Fatalf("substates are different; %v", err)
 	}
+
 }
 
 func TestSubstateDB_DeleteSubstate(t *testing.T) {
@@ -200,13 +205,17 @@ func createDbAndPutSubstate(dbPath string) (*substateDB, error) {
 }
 
 func addSubstate(db *substateDB, blk uint64) error {
+	return addCustomSubstate(db, blk, testSubstate)
+}
+
+func addCustomSubstate(db *substateDB, blk uint64, ss *substate.Substate) error {
 	h1 := types.Hash{}
 	h1.SetBytes(nil)
 
 	h2 := types.Hash{}
 	h2.SetBytes(nil)
 
-	s := *testSubstate
+	s := *ss
 
 	s.InputSubstate[types.Address{1}] = substate.NewAccount(1, new(big.Int).SetUint64(1), h1[:])
 	s.OutputSubstate[types.Address{2}] = substate.NewAccount(2, new(big.Int).SetUint64(2), h2[:])
