@@ -125,10 +125,8 @@ func (msg *Substate_TxMessage) decode(lookup dbGetCode) (*substate.Message, erro
 		pTo = &address
 	}
 
-	// if InitCodeHash exists:
-	// 1. code = lookup the code using InitCodeHash
-	// 2. set data -> code from (1)
-	// 3. clear InitCodeHash
+	// In normal cases, pass data directly.
+	// In case of contract creation, lookup msg.GetInitCodeHash() and pass that instead
 	var data []byte = msg.GetData()
 	if pTo == nil {
 		code, err := lookup(types.BytesToHash(msg.GetInitCodeHash()))
