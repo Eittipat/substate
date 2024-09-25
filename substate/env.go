@@ -10,7 +10,6 @@ import (
 
 type Env struct {
 	Coinbase    types.Address
-	Difficulty  *big.Int
 	GasLimit    uint64
 	Number      uint64
 	Timestamp   uint64
@@ -20,8 +19,10 @@ type Env struct {
 	BaseFee *big.Int // nil if EIP-1559 is not activated
 	// Cancun hard fork EIP-4844
 	BlobBaseFee *big.Int // nil if EIP-4844 is not activated
-
-	Random *types.Hash
+	
+	// EIP-4399: Supplant DIFFICULTY opcode with PREVRANDAO
+	Difficulty  *big.Int // nil if EIP-4399 is activated
+	Random *types.Hash // nil if EIP-4399 is not activated
 }
 
 func NewEnv(
