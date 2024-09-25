@@ -26,10 +26,7 @@ func (s *Substate) Decode(lookup dbGetCode, block uint64, tx int) (*substate.Sub
 		return nil, err
 	}
 
-	environment, err := s.GetBlockEnv().decode()
-	if err != nil {
-		return nil, err
-	}
+	environment := s.GetBlockEnv().decode()
 
 	message, err := s.GetTxMessage().decode(lookup)
 	if err != nil {
@@ -37,10 +34,7 @@ func (s *Substate) Decode(lookup dbGetCode, block uint64, tx int) (*substate.Sub
 	}
 
 	contractAddress := s.GetTxMessage().getContractAddress()
-	result, err := s.GetResult().decode(contractAddress)
-	if err != nil {
-		return nil, err
-	}
+	result := s.GetResult().decode(contractAddress)
 
 	return &substate.Substate{
 		InputSubstate:  *input,
@@ -58,16 +52,9 @@ func (alloc *Substate_Alloc) decode(lookup dbGetCode) (*substate.WorldState, err
 	world := make(substate.WorldState, len(alloc.GetAlloc()))
 
 	for _, entry := range alloc.GetAlloc() {
-		addr, acct, err := entry.decode()
-		if err != nil {
-			return nil, fmt.Errorf("Error decoding alloc entry; %w", err)
-		}
-
+		addr, acct := entry.decode()
 		address := types.BytesToAddress(addr)
-		nonce, balance, _, codehash, err := acct.decode()
-		if err != nil {
-			return nil, fmt.Errorf("Error decoding entry account; %w", err)
-		}
+		nonce, balance, _, codehash := acct.decode()
 
 		code, err := lookup(codehash)
 		if err != nil && !errors.Is(err, leveldb.ErrNotFound) {
@@ -76,10 +63,7 @@ func (alloc *Substate_Alloc) decode(lookup dbGetCode) (*substate.WorldState, err
 
 		world[address] = substate.NewAccount(nonce, balance, code)
 		for _, storage := range acct.GetStorage() {
-			key, value, err := storage.decode()
-			if err != nil {
-				return nil, fmt.Errorf("Error decoding account storage entry; %w", err)
-			}
+			key, value := storage.decode()
 			world[address].Storage[key] = value
 		}
 	}
@@ -87,34 +71,28 @@ func (alloc *Substate_Alloc) decode(lookup dbGetCode) (*substate.WorldState, err
 	return &world, nil
 }
 
-func (entry *Substate_AllocEntry) decode() ([]byte, *Substate_Account, error) {
-	return entry.GetAddress(), entry.GetAccount(), nil
+func (entry *Substate_AllocEntry) decode() ([]byte, *Substate_Account) {
+	return entry.GetAddress(), entry.GetAccount()
 }
 
-func (acct *Substate_Account) decode() (uint64, *big.Int, []byte, types.Hash, error) {
+func (acct *Substate_Account) decode() (uint64, *big.Int, []byte, types.Hash) {
 	return acct.GetNonce(),
 		types.BytesToBigInt(acct.GetBalance()),
 		acct.GetCode(),
-		types.BytesToHash(acct.GetCodeHash()),
-		nil
+		types.BytesToHash(acct.GetCodeHash())
 }
 
-func (entry *Substate_Account_StorageEntry) decode() (types.Hash, types.Hash, error) {
-	return types.BytesToHash(entry.GetKey()),
-		types.BytesToHash(entry.GetValue()),
-		nil
+func (entry *Substate_Account_StorageEntry) decode() (types.Hash, types.Hash) {
+	return types.BytesToHash(entry.GetKey()), types.BytesToHash(entry.GetValue())
 }
 
 // decode converts protobuf-encoded Substate_BlockEnv into aida-comprehensible Env
-func (env *Substate_BlockEnv) decode() (*substate.Env, error) {
+func (env *Substate_BlockEnv) decode() *substate.Env {
 	var blockHashes map[uint64]types.Hash = nil
 	if env.GetBlockHashes() != nil {
 		blockHashes = make(map[uint64]types.Hash, len(env.GetBlockHashes()))
 		for _, entry := range env.GetBlockHashes() {
-			key, value, err := entry.decode()
-			if err != nil {
-				return nil, err
-			}
+			key, value := entry.decode()
 			blockHashes[key] = types.BytesToHash(value)
 		}
 	}
@@ -129,11 +107,11 @@ func (env *Substate_BlockEnv) decode() (*substate.Env, error) {
 		BaseFee:     BytesValueToBigInt(env.GetBaseFee()),
 		Random:      BytesValueToHash(env.GetRandom()),
 		BlobBaseFee: BytesValueToBigInt(env.GetBlobBaseFee()),
-	}, nil
+	}
 }
 
-func (entry *Substate_BlockEnv_BlockHashEntry) decode() (uint64, []byte, error) {
-	return entry.GetKey(), entry.GetValue(), nil
+func (entry *Substate_BlockEnv_BlockHashEntry) decode() (uint64, []byte) {
+	return entry.GetKey(), entry.GetValue()
 }
 
 // decode converts protobuf-encoded Substate_TxMessage into aida-comprehensible Message
@@ -171,10 +149,7 @@ func (msg *Substate_TxMessage) decode(lookup dbGetCode) (*substate.Message, erro
 
 		accessList = make([]types.AccessTuple, len(msg.GetAccessList()))
 		for i, entry := range msg.GetAccessList() {
-			addr, keys, err := entry.decode()
-			if err != nil {
-				return nil, err
-			}
+			addr, keys := entry.decode()
 
 			address := types.BytesToAddress(addr)
 			storageKeys := make([]types.Hash, len(keys))
@@ -204,14 +179,15 @@ func (msg *Substate_TxMessage) decode(lookup dbGetCode) (*substate.Message, erro
 	var blobHashes []types.Hash = nil
 	switch txType {
 	case Substate_TxMessage_TXTYPE_BLOB:
-	msgBlobHashes := msg.GetBlobHashes()
-	if  msgBlobHashes == nil {
-		break
-	}
-	blobHashes = make([]types.Hash, len(msgBlobHashes))
-	for i, hash := range msgBlobHashes {
-		blobHashes[i] = types.BytesToHash(hash)
-	}
+		msgBlobHashes := msg.GetBlobHashes()
+		if msgBlobHashes == nil {
+			break
+		}
+
+		blobHashes = make([]types.Hash, len(msgBlobHashes))
+		for i, hash := range msgBlobHashes {
+			blobHashes[i] = types.BytesToHash(hash)
+		}
 	}
 
 	return &substate.Message{
@@ -231,8 +207,8 @@ func (msg *Substate_TxMessage) decode(lookup dbGetCode) (*substate.Message, erro
 	}, nil
 }
 
-func (entry *Substate_TxMessage_AccessListEntry) decode() ([]byte, [][]byte, error) {
-	return entry.GetAddress(), entry.GetStorageKeys(), nil
+func (entry *Substate_TxMessage_AccessListEntry) decode() ([]byte, [][]byte) {
+	return entry.GetAddress(), entry.GetStorageKeys()
 }
 
 // getContractAddress returns the address of the newly created contract if any.
@@ -251,14 +227,10 @@ func (msg *Substate_TxMessage) getContractAddress() common.Address {
 }
 
 // decode converts protobuf-encoded Substate_Result into aida-comprehensible Result
-func (res *Substate_Result) decode(contractAddress common.Address) (*substate.Result, error) {
-	var err error = nil
+func (res *Substate_Result) decode(contractAddress common.Address) *substate.Result {
 	logs := make([]*types.Log, len(res.GetLogs()))
 	for i, log := range res.GetLogs() {
-		logs[i], err = log.decode()
-		if err != nil {
-			return nil, fmt.Errorf("Error decoding result; %w", err)
-		}
+		logs[i] = log.decode()
 	}
 
 	return substate.NewResult(
@@ -267,10 +239,10 @@ func (res *Substate_Result) decode(contractAddress common.Address) (*substate.Re
 		logs,                          // Logs
 		types.BytesToAddress(contractAddress.Bytes()), // ContractAddress
 		res.GetGasUsed(), // GasUsed
-	), nil
+	)
 }
 
-func (log *Substate_Result_Log) decode() (*types.Log, error) {
+func (log *Substate_Result_Log) decode() *types.Log {
 	topics := make([]types.Hash, len(log.GetTopics()))
 	for i, topic := range log.GetTopics() {
 		topics[i] = types.BytesToHash(topic)
@@ -280,5 +252,5 @@ func (log *Substate_Result_Log) decode() (*types.Log, error) {
 		Address: types.BytesToAddress(log.GetAddress()),
 		Topics:  topics,
 		Data:    log.GetData(),
-	}, nil
+	}
 }
