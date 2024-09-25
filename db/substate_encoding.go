@@ -38,10 +38,10 @@ type substateEncoding struct {
 }
 
 // decoderFunc aliases the common function used to decode substate
-type decoderFunc func([]byte, uint64, int) (*substate.Substate, error)
+type decodeFunc func([]byte, uint64, int) (*substate.Substate, error)
 
 // codeLookup aliases codehash->code lookup necessary to decode substate
-type codeLookup = func(types.Hash) ([]byte, error)
+type codeLookupFunc = func(types.Hash) ([]byte, error)
 
 // newSubstateDecoder returns requested SubstateDecoder
 func newSubstateEncoding(encoding string, lookup codeLookup) (*substateEncoding, error) {
