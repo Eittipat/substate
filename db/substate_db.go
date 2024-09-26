@@ -43,6 +43,12 @@ type SubstateDB interface {
 
 	// GetLastSubstate returns last substate (block and transaction wise) inside given DB.
 	GetLastSubstate() (*substate.Substate, error)
+
+	// SetSubstateEncoding sets the decoder func to the provided encoding
+	SetSubstateEncoding(encoding string) (*substateDB, error)
+
+	// GetSubstateEncoding returns the currently configured encoding
+	GetSubstateEncoding() string
 }
 
 // NewDefaultSubstateDB creates new instance of SubstateDB with default options.
@@ -57,11 +63,11 @@ func NewSubstateDB(path string, o *opt.Options, wo *opt.WriteOptions, ro *opt.Re
 }
 
 func MakeDefaultSubstateDB(db *leveldb.DB) SubstateDB {
-	return &substateDB{&codeDB{&baseDB{backend: db}}}
+	return &substateDB{&codeDB{&baseDB{backend: db}}, nil}
 }
 
 func MakeDefaultSubstateDBFromBaseDB(db BaseDB) SubstateDB {
-	return &substateDB{&codeDB{&baseDB{backend: db.getBackend()}}}
+	return &substateDB{&codeDB{&baseDB{backend: db.getBackend()}}, nil}
 }
 
 // NewReadOnlySubstateDB creates a new instance of read-only SubstateDB.
@@ -70,7 +76,7 @@ func NewReadOnlySubstateDB(path string) (SubstateDB, error) {
 }
 
 func MakeSubstateDB(db *leveldb.DB, wo *opt.WriteOptions, ro *opt.ReadOptions) SubstateDB {
-	return &substateDB{&codeDB{&baseDB{backend: db, wo: wo, ro: ro}}}
+	return &substateDB{&codeDB{&baseDB{backend: db, wo: wo, ro: ro}}, nil}
 }
 
 func newSubstateDB(path string, o *opt.Options, wo *opt.WriteOptions, ro *opt.ReadOptions) (*substateDB, error) {
@@ -78,11 +84,12 @@ func newSubstateDB(path string, o *opt.Options, wo *opt.WriteOptions, ro *opt.Re
 	if err != nil {
 		return nil, err
 	}
-	return &substateDB{base}, nil
+	return &substateDB{base, nil}, nil
 }
 
 type substateDB struct {
 	*codeDB
+	encoding *substateEncoding
 }
 
 func (db *substateDB) GetFirstSubstate() *substate.Substate {
@@ -108,12 +115,7 @@ func (db *substateDB) GetSubstate(block uint64, tx int) (*substate.Substate, err
 		return nil, fmt.Errorf("cannot get substate block: %v, tx: %v from db; %w", block, tx, err)
 	}
 
-	rlpSubstate, err := rlp.Decode(val)
-	if err != nil {
-		return nil, fmt.Errorf("cannot decode data into rlp block: %v, tx %v; %w", block, tx, err)
-	}
-
-	return rlpSubstate.ToSubstate(db.GetCode, block, tx)
+	return db.decodeToSubstate(val, block, tx)
 }
 
 // GetBlockSubstates returns substates for given block if exists within DB.
@@ -138,14 +140,9 @@ func (db *substateDB) GetBlockSubstates(block uint64) (map[int]*substate.Substat
 			return nil, fmt.Errorf("record-replay: GetBlockSubstates(%v) iterated substates from block %v", block, b)
 		}
 
-		rlpSubstate, err := rlp.Decode(value)
+		sbstt, err := db.decodeToSubstate(value, block, tx)
 		if err != nil {
-			return nil, fmt.Errorf("cannot decode data into rlp block: %v, tx %v; %w", block, tx, err)
-		}
-
-		sbstt, err := rlpSubstate.ToSubstate(db.GetCode, block, tx)
-		if err != nil {
-			return nil, fmt.Errorf("cannot decode data into substate: %w", err)
+			return nil, fmt.Errorf("failed to decode substate, block %v, tx: %v; %w", block, tx, err)
 		}
 
 		txSubstate[tx] = sbstt

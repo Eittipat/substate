@@ -29,6 +29,10 @@ func TestSubstateIterator_Value(t *testing.T) {
 		return
 	}
 
+	testSubstatorIterator_Value(db, t)
+}
+
+func testSubstatorIterator_Value(db *substateDB, t *testing.T) {
 	iter := db.NewSubstateIterator(0, 10)
 
 	if !iter.Next() {
@@ -48,6 +52,7 @@ func TestSubstateIterator_Value(t *testing.T) {
 	if tx.Transaction != 1 {
 		t.Fatalf("iterator returned transaction with different transaction number\ngot: %v\n want: %v", tx.Transaction, 1)
 	}
+
 }
 
 func TestSubstateIterator_Release(t *testing.T) {

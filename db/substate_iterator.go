@@ -3,10 +3,8 @@ package db
 import (
 	"fmt"
 
-	"github.com/syndtr/goleveldb/leveldb/util"
-
-	"github.com/Fantom-foundation/Substate/rlp"
 	"github.com/Fantom-foundation/Substate/substate"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 func newSubstateIterator(db *substateDB, start []byte) *substateIterator {
@@ -33,12 +31,7 @@ func (i *substateIterator) decode(data rawEntry) (*substate.Substate, error) {
 		return nil, fmt.Errorf("invalid substate key: %v; %w", key, err)
 	}
 
-	rlpSubstate, err := rlp.Decode(value)
-	if err != nil {
-		return nil, err
-	}
-
-	return rlpSubstate.ToSubstate(i.db.GetCode, block, tx)
+	return i.db.decodeToSubstate(value, block, tx)
 }
 
 func (i *substateIterator) start(numWorkers int) {
