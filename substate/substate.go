@@ -1,7 +1,6 @@
 package substate
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"

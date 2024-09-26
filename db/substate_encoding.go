@@ -3,9 +3,11 @@ package db
 import (
 	"fmt"
 
+	pb "github.com/Fantom-foundation/Substate/protobuf"
 	"github.com/Fantom-foundation/Substate/rlp"
 	"github.com/Fantom-foundation/Substate/substate"
 	"github.com/Fantom-foundation/Substate/types"
+	"github.com/golang/protobuf/proto"
 )
 
 // SetSubstateEncoding sets the runtime encoding/decoding behavior of substateDB
@@ -55,6 +57,14 @@ func newSubstateEncoding(encoding string, lookup codeLookup) (*substateEncoding,
 			},
 		}, nil
 
+	case "protobuf", "pb":
+		return &substateEncoding{
+			schema: "protobuf",
+			decode: func(bytes []byte, block uint64, tx int) (*substate.Substate, error) {
+				return decodeProtobuf(bytes, lookup, block, tx)
+			},
+		}, nil
+
 	default:
 		return nil, fmt.Errorf("Encoding not supported: %s", encoding)
 
@@ -78,3 +88,14 @@ func decodeRlp(bytes []byte, lookup codeLookup, block uint64, tx int) (*substate
 
 	return rlpSubstate.ToSubstate(lookup, block, tx)
 }
+
+// decodeProtobuf decodes into substate the provided rlp-encoded bytecode
+func decodeProtobuf(bytes []byte, lookup codeLookup, block uint64, tx int) (*substate.Substate, error) {
+	pbSubstate := &pb.Substate{}
+	if err := proto.Unmarshal(bytes, pbSubstate); err != nil {
+		return nil, fmt.Errorf("cannot decode substate data from protobuf block: %v, tx %v; %w", block, tx, err)
+	}
+
+	return pbSubstate.Decode(lookup, block, tx)
+}
+
