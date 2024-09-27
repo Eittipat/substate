@@ -9,11 +9,11 @@ import (
 // Encode converts aida-substate into protobuf-encoded message
 func Encode(ss *substate.Substate) *Substate {
 	return &Substate{
-		InputAlloc: encodeWorldState(ss.InputSubstate),
+		InputAlloc:  encodeWorldState(ss.InputSubstate),
 		OutputAlloc: encodeWorldState(ss.OutputSubstate),
-		BlockEnv: encodeEnv(ss.Env),
-		TxMessage: encodeMessage(ss.Message),
-		Result: encodeResult(ss.Result),
+		BlockEnv:    encodeEnv(ss.Env),
+		TxMessage:   encodeMessage(ss.Message),
+		Result:      encodeResult(ss.Result),
 	}
 }
 
@@ -24,15 +24,15 @@ func encodeWorldState(sw substate.WorldState) *Substate_Alloc {
 		storage := make([]*Substate_Account_StorageEntry, 0, len(acct.Storage))
 		for key, value := range acct.Storage {
 			storage = append(storage, &Substate_Account_StorageEntry{
-				Key: key.Bytes(),
+				Key:   key.Bytes(),
 				Value: value.Bytes(),
 			})
 		}
 
-		world = append(world, &Substate_AllocEntry {
+		world = append(world, &Substate_AllocEntry{
 			Address: addr.Bytes(),
 			Account: &Substate_Account{
-				Nonce: &acct.Nonce,
+				Nonce:   &acct.Nonce,
 				Balance: acct.Balance.Bytes(),
 				Storage: storage,
 				Contract: &Substate_Account_CodeHash{
@@ -50,21 +50,21 @@ func encodeEnv(se *substate.Env) *Substate_BlockEnv {
 	blockHashes := make([]*Substate_BlockEnv_BlockHashEntry, 0, len(se.BlockHashes))
 	for number, hash := range se.BlockHashes {
 		blockHashes = append(blockHashes, &Substate_BlockEnv_BlockHashEntry{
-			Key: &number,
+			Key:   &number,
 			Value: hash.Bytes(),
 		})
 	}
 
 	return &Substate_BlockEnv{
-		Coinbase: se.Coinbase.Bytes(),
-		Difficulty: se.Difficulty.Bytes(),
-		GasLimit: &se.GasLimit,
-		Number: &se.Number,
-		Timestamp: &se.Timestamp,
+		Coinbase:    se.Coinbase.Bytes(),
+		Difficulty:  se.Difficulty.Bytes(),
+		GasLimit:    &se.GasLimit,
+		Number:      &se.Number,
+		Timestamp:   &se.Timestamp,
 		BlockHashes: blockHashes,
-		BaseFee: types.BigIntToWrapperspbBytes(se.BaseFee),
+		BaseFee:     types.BigIntToWrapperspbBytes(se.BaseFee),
 		BlobBaseFee: types.BigIntToWrapperspbBytes(se.BlobBaseFee),
-		Random: types.HashToWrapperspbBytes(se.Random),
+		Random:      types.HashToWrapperspbBytes(se.Random),
 	}
 }
 
@@ -88,19 +88,19 @@ func encodeMessage(sm *substate.Message) *Substate_TxMessage {
 	}
 
 	return &Substate_TxMessage{
-		Nonce: &sm.Nonce,
-		GasPrice: sm.GasPrice.Bytes(),
-		Gas: &sm.Gas,
-		From: sm.From.Bytes(),
-		To: types.AddressToWrapperspbBytes(sm.To),
-		Value: sm.Value.Bytes(),
-		Input: &Substate_TxMessage_Data{Data: sm.Data},
-		TxType: txType,
-		AccessList: accessList,
-		GasFeeCap: types.BigIntToWrapperspbBytes(sm.GasFeeCap),
-		GasTipCap: types.BigIntToWrapperspbBytes(sm.GasTipCap),
+		Nonce:         &sm.Nonce,
+		GasPrice:      sm.GasPrice.Bytes(),
+		Gas:           &sm.Gas,
+		From:          sm.From.Bytes(),
+		To:            types.AddressToWrapperspbBytes(sm.To),
+		Value:         sm.Value.Bytes(),
+		Input:         &Substate_TxMessage_Data{Data: sm.Data},
+		TxType:        txType,
+		AccessList:    accessList,
+		GasFeeCap:     types.BigIntToWrapperspbBytes(sm.GasFeeCap),
+		GasTipCap:     types.BigIntToWrapperspbBytes(sm.GasTipCap),
 		BlobGasFeeCap: types.BigIntToWrapperspbBytes(sm.BlobGasFeeCap),
-		BlobHashes: blobHashes,
+		BlobHashes:    blobHashes,
 	}
 }
 
@@ -112,7 +112,7 @@ func (entry *Substate_TxMessage_AccessListEntry) encode(sat *types.AccessTuple) 
 	}
 
 	entry = &Substate_TxMessage_AccessListEntry{
-		Address: sat.Address.Bytes(),
+		Address:     sat.Address.Bytes(),
 		StorageKeys: keys,
 	}
 }
@@ -124,10 +124,10 @@ func encodeResult(sr *substate.Result) *Substate_Result {
 		logs[i].encode(log)
 	}
 
-	return &Substate_Result {
-		Status: &sr.Status,
-		Bloom: sr.Bloom.Bytes(),
-		Logs: logs,
+	return &Substate_Result{
+		Status:  &sr.Status,
+		Bloom:   sr.Bloom.Bytes(),
+		Logs:    logs,
 		GasUsed: &sr.GasUsed,
 	}
 }
@@ -139,9 +139,9 @@ func (log *Substate_Result_Log) encode(sl *types.Log) {
 		topics[i] = topic.Bytes()
 	}
 
-	log = &Substate_Result_Log {
+	log = &Substate_Result_Log{
 		Address: sl.Address.Bytes(),
-		Topics: topics,
-		Data: sl.Data,
+		Topics:  topics,
+		Data:    sl.Data,
 	}
 }

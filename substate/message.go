@@ -23,7 +23,7 @@ type Message struct {
 	Data  []byte
 
 	// for memoization
-	dataHash *types.Hash
+	dataHash       *types.Hash
 	ProtobufTxType *int32 // when encoding pbuf
 
 	// Berlin hard fork, EIP-2930: Optional access lists

@@ -4,35 +4,35 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
 	pb "github.com/Fantom-foundation/Substate/protobuf"
 	"github.com/Fantom-foundation/Substate/rlp"
 	trlp "github.com/Fantom-foundation/Substate/types/rlp"
+	"google.golang.org/protobuf/proto"
 )
 
 type encTest struct {
 	bytes []byte
-	blk uint64
-	tx int
+	blk   uint64
+	tx    int
 }
 
 var (
 	simplePb, _ = proto.Marshal(pb.Encode(testSubstate))
-	testPb = encTest {
+	testPb      = encTest{
 		bytes: simplePb,
-		blk: testSubstate.Block,
-		tx: testSubstate.Transaction,
+		blk:   testSubstate.Block,
+		tx:    testSubstate.Transaction,
 	}
 
 	simpleRlp, _ = trlp.EncodeToBytes(rlp.NewRLP(testSubstate))
-	testRlp = encTest{
+	testRlp      = encTest{
 		bytes: simpleRlp,
-		blk: testSubstate.Block,
-		tx: testSubstate.Transaction,
+		blk:   testSubstate.Block,
+		tx:    testSubstate.Transaction,
 	}
 
 	supportedEncoding = map[string]encTest{
-		"rlp": testRlp,
+		"rlp":      testRlp,
 		"protobuf": testPb,
 	}
 )
@@ -119,7 +119,7 @@ func TestSubstateEncoding_TestDb(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		
+
 		testSubstateDB_GetSubstate(db, t)
 	}
 }
