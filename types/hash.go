@@ -19,8 +19,6 @@ package types
 import (
 	"encoding/hex"
 	"math/big"
-
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Hash represents the 32 byte Keccak256 hash of arbitrary data.
@@ -85,12 +83,4 @@ func (h *Hash) UnmarshalText(text []byte) error {
 	}
 	*h = BytesToHash(FromHex(string(text)))
 	return nil
-}
-
-// HashToWrapperspbBytes encodes hash as wrapperspb.BytesValue, nil if hash is nil
-func HashToWrapperspbBytes(h *Hash) *wrapperspb.BytesValue {
-	if h == nil {
-		return nil
-	}
-	return wrapperspb.Bytes(h.Bytes())
 }

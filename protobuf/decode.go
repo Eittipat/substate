@@ -77,7 +77,7 @@ func (entry *Substate_AllocEntry) decode() ([]byte, *Substate_Account) {
 
 func (acct *Substate_Account) decode() (uint64, *big.Int, []byte, types.Hash) {
 	return acct.GetNonce(),
-		types.BytesToBigInt(acct.GetBalance()),
+		BytesToBigInt(acct.GetBalance()),
 		acct.GetCode(),
 		types.BytesToHash(acct.GetCodeHash())
 }
@@ -99,7 +99,7 @@ func (env *Substate_BlockEnv) decode() *substate.Env {
 
 	return &substate.Env{
 		Coinbase:    types.BytesToAddress(env.GetCoinbase()),
-		Difficulty:  types.BytesToBigInt(env.GetDifficulty()),
+		Difficulty:  BytesToBigInt(env.GetDifficulty()),
 		GasLimit:    env.GetGasLimit(),
 		Number:      env.GetNumber(),
 		Timestamp:   env.GetTimestamp(),
@@ -163,8 +163,8 @@ func (msg *Substate_TxMessage) decode(lookup dbGetCode) (*substate.Message, erro
 	}
 
 	// London hard fork, EIP-1559: Fee market
-	var gasFeeCap *big.Int = types.BytesToBigInt(msg.GetGasPrice())
-	var gasTipCap *big.Int = types.BytesToBigInt(msg.GetGasPrice())
+	var gasFeeCap *big.Int = BytesToBigInt(msg.GetGasPrice())
+	var gasTipCap *big.Int = BytesToBigInt(msg.GetGasPrice())
 	switch txType {
 	case Substate_TxMessage_TXTYPE_DYNAMICFEE,
 		Substate_TxMessage_TXTYPE_BLOB:
@@ -191,11 +191,11 @@ func (msg *Substate_TxMessage) decode(lookup dbGetCode) (*substate.Message, erro
 	return &substate.Message{
 		Nonce:         msg.GetNonce(),
 		CheckNonce:    true,
-		GasPrice:      types.BytesToBigInt(msg.GetGasPrice()),
+		GasPrice:      BytesToBigInt(msg.GetGasPrice()),
 		Gas:           msg.GetGas(),
 		From:          types.BytesToAddress(msg.GetFrom()),
 		To:            pTo,
-		Value:         types.BytesToBigInt(msg.GetValue()),
+		Value:         BytesToBigInt(msg.GetValue()),
 		Data:          data,
 		AccessList:    accessList,
 		GasFeeCap:     gasFeeCap,

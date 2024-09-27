@@ -2,8 +2,6 @@ package types
 
 import (
 	"encoding/hex"
-
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const AddressLength = 20
@@ -74,12 +72,4 @@ func (a *Address) UnmarshalText(text []byte) error {
 	}
 	*a = BytesToAddress(FromHex(string(text)))
 	return nil
-}
-
-// AddressToWrapperspbBytes returns address as wrapperspb.BytesValue, nil if address is nil
-func AddressToWrapperspbBytes(a *Address) *wrapperspb.BytesValue {
-	if a == nil {
-		return nil
-	}
-	return wrapperspb.Bytes(a.Bytes())
 }

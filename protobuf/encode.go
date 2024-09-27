@@ -62,9 +62,9 @@ func encodeEnv(se *substate.Env) *Substate_BlockEnv {
 		Number:      &se.Number,
 		Timestamp:   &se.Timestamp,
 		BlockHashes: blockHashes,
-		BaseFee:     types.BigIntToWrapperspbBytes(se.BaseFee),
-		BlobBaseFee: types.BigIntToWrapperspbBytes(se.BlobBaseFee),
-		Random:      types.HashToWrapperspbBytes(se.Random),
+		BaseFee:     BigIntToWrapperspbBytes(se.BaseFee),
+		BlobBaseFee: BigIntToWrapperspbBytes(se.BlobBaseFee),
+		Random:      HashToWrapperspbBytes(se.Random),
 	}
 }
 
@@ -92,14 +92,14 @@ func encodeMessage(sm *substate.Message) *Substate_TxMessage {
 		GasPrice:      sm.GasPrice.Bytes(),
 		Gas:           &sm.Gas,
 		From:          sm.From.Bytes(),
-		To:            types.AddressToWrapperspbBytes(sm.To),
+		To:            AddressToWrapperspbBytes(sm.To),
 		Value:         sm.Value.Bytes(),
 		Input:         &Substate_TxMessage_Data{Data: sm.Data},
 		TxType:        txType,
 		AccessList:    accessList,
-		GasFeeCap:     types.BigIntToWrapperspbBytes(sm.GasFeeCap),
-		GasTipCap:     types.BigIntToWrapperspbBytes(sm.GasTipCap),
-		BlobGasFeeCap: types.BigIntToWrapperspbBytes(sm.BlobGasFeeCap),
+		GasFeeCap:     BigIntToWrapperspbBytes(sm.GasFeeCap),
+		GasTipCap:     BigIntToWrapperspbBytes(sm.GasTipCap),
+		BlobGasFeeCap: BigIntToWrapperspbBytes(sm.BlobGasFeeCap),
 		BlobHashes:    blobHashes,
 	}
 }
