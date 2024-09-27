@@ -139,7 +139,7 @@ func (msg *Substate_TxMessage) decode(lookup dbGetCode) (*substate.Message, erro
 	txType := msg.GetTxType()
 
 	// Berlin hard fork, EIP-2930: Optional access lists
-	var accessList types.AccessList = nil // nil if EIP-2930 is not activated
+	var accessList types.AccessList = []types.AccessTuple{}
 	switch txType {
 	case Substate_TxMessage_TXTYPE_ACCESSLIST,
 		Substate_TxMessage_TXTYPE_DYNAMICFEE,
