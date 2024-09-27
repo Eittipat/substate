@@ -37,21 +37,26 @@ func (db *substateDB) GetSubstateEncoding() string {
 
 type substateEncoding struct {
 	schema string
-	decode decoderFunc
+	decode decodeFunc
 	encode encodeFunc
 }
 
-// decoderFunc aliases the common function used to decode substate
-type decoderFunc func([]byte, uint64, int) (*substate.Substate, error)
+// decodeFunc aliases the common function used to decode substate
+type decodeFunc func([]byte, uint64, int) (*substate.Substate, error)
 
+<<<<<<< HEAD
 // encodeFunc alias the common function used to encode substate
 type encodeFunc func(*substate.Substate, uint64, int) ([]byte, error)
 
 // codeLookup aliases codehash->code lookup necessary to decode substate
 type codeLookup = func(types.Hash) ([]byte, error)
+=======
+// codeLookupFunc aliases codehash->code lookup necessary to decode substate
+type codeLookupFunc = func(types.Hash) ([]byte, error)
+>>>>>>> main
 
 // newSubstateDecoder returns requested SubstateDecoder
-func newSubstateEncoding(encoding string, lookup codeLookup) (*substateEncoding, error) {
+func newSubstateEncoding(encoding string, lookup codeLookupFunc) (*substateEncoding, error) {
 	switch encoding {
 
 	case "", "default", "rlp":
@@ -96,7 +101,7 @@ func (db *substateDB) encodeSubstate(ss *substate.Substate, block uint64, tx int
 
 
 // decodeRlp decodes into substate the provided rlp-encoded bytecode
-func decodeRlp(bytes []byte, lookup codeLookup, block uint64, tx int) (*substate.Substate, error) {
+func decodeRlp(bytes []byte, lookup codeLookupFunc, block uint64, tx int) (*substate.Substate, error) {
 	rlpSubstate, err := rlp.Decode(bytes)
 	if err != nil {
 		return nil, fmt.Errorf("cannot decode substate data from rlp block: %v, tx %v; %w", block, tx, err)
