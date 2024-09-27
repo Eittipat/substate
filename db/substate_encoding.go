@@ -7,6 +7,7 @@ import (
 	"github.com/Fantom-foundation/Substate/rlp"
 	"github.com/Fantom-foundation/Substate/substate"
 	"github.com/Fantom-foundation/Substate/types"
+	trlp "github.com/Fantom-foundation/Substate/types/rlp"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -37,10 +38,14 @@ func (db *substateDB) GetSubstateEncoding() string {
 type substateEncoding struct {
 	schema string
 	decode decoderFunc
+	encode encodeFunc
 }
 
 // decoderFunc aliases the common function used to decode substate
 type decoderFunc func([]byte, uint64, int) (*substate.Substate, error)
+
+// encodeFunc alias the common function used to encode substate
+type encodeFunc func(*substate.Substate, uint64, int) ([]byte, error)
 
 // codeLookup aliases codehash->code lookup necessary to decode substate
 type codeLookup = func(types.Hash) ([]byte, error)
@@ -49,12 +54,13 @@ type codeLookup = func(types.Hash) ([]byte, error)
 func newSubstateEncoding(encoding string, lookup codeLookup) (*substateEncoding, error) {
 	switch encoding {
 
-	case "default", "rlp":
+	case "", "default", "rlp":
 		return &substateEncoding{
 			schema: "rlp",
 			decode: func(bytes []byte, block uint64, tx int) (*substate.Substate, error) {
 				return decodeRlp(bytes, lookup, block, tx)
 			},
+			encode: encodeRlp,
 		}, nil
 
 	case "protobuf", "pb":
@@ -63,6 +69,7 @@ func newSubstateEncoding(encoding string, lookup codeLookup) (*substateEncoding,
 			decode: func(bytes []byte, block uint64, tx int) (*substate.Substate, error) {
 				return decodeProtobuf(bytes, lookup, block, tx)
 			},
+			encode: encodeProtobuf,
 		}, nil
 
 	default:
@@ -79,6 +86,15 @@ func (db *substateDB) decodeToSubstate(bytes []byte, block uint64, tx int) (*sub
 	return db.encoding.decode(bytes, block, tx)
 }
 
+// encodeSubstate defensively defaults to "default" if nil
+func (db *substateDB) encodeSubstate(ss *substate.Substate, block uint64, tx int) ([]byte, error) {
+	if db.encoding == nil {
+		db.SetSubstateEncoding("default")
+	}
+	return db.encoding.encode(ss, block, tx)
+}
+
+
 // decodeRlp decodes into substate the provided rlp-encoded bytecode
 func decodeRlp(bytes []byte, lookup codeLookup, block uint64, tx int) (*substate.Substate, error) {
 	rlpSubstate, err := rlp.Decode(bytes)
@@ -89,6 +105,16 @@ func decodeRlp(bytes []byte, lookup codeLookup, block uint64, tx int) (*substate
 	return rlpSubstate.ToSubstate(lookup, block, tx)
 }
 
+//encodeRlp encodes into rlp-encoded bytes the provided substate
+func encodeRlp(ss *substate.Substate, block uint64, tx int) ([]byte, error) {
+	bytes, err := trlp.EncodeToBytes(rlp.NewRLP(ss))
+	if err != nil {
+		return nil, fmt.Errorf("cannot encode substate into rlp block: %v, tx %v; %w", block, tx, err)
+	}
+	
+	return bytes, nil
+}
+
 // decodeProtobuf decodes into substate the provided rlp-encoded bytecode
 func decodeProtobuf(bytes []byte, lookup codeLookup, block uint64, tx int) (*substate.Substate, error) {
 	pbSubstate := &pb.Substate{}
@@ -97,5 +123,15 @@ func decodeProtobuf(bytes []byte, lookup codeLookup, block uint64, tx int) (*sub
 	}
 
 	return pbSubstate.Decode(lookup, block, tx)
+}
+
+//encodeRlp encodes into rlp-encoded bytes the provided substate
+func encodeProtobuf(ss *substate.Substate, block uint64, tx int) ([]byte, error) {
+	bytes, err := proto.Marshal(pb.Encode(ss))
+	if err != nil {
+		return nil, fmt.Errorf("cannot encode substate into protobuf block: %v, tx %v; %w", block, tx, err)
+	}
+
+	return bytes, nil
 }
 

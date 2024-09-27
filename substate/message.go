@@ -24,6 +24,7 @@ type Message struct {
 
 	// for memoization
 	dataHash *types.Hash
+	ProtobufTxType *int32 // when encoding pbuf
 
 	// Berlin hard fork, EIP-2930: Optional access lists
 	AccessList types.AccessList // nil if EIP-2930 is not activated

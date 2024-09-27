@@ -4,9 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/Fantom-foundation/Substate/rlp"
 	"github.com/Fantom-foundation/Substate/substate"
-	trlp "github.com/Fantom-foundation/Substate/types/rlp"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -180,10 +178,9 @@ func (db *substateDB) PutSubstate(ss *substate.Substate) error {
 
 	key := SubstateDBKey(ss.Block, ss.Transaction)
 
-	substateRLP := rlp.NewRLP(ss)
-	value, err := trlp.EncodeToBytes(substateRLP)
+	value, err := db.encodeSubstate(ss, ss.Block, ss.Transaction)
 	if err != nil {
-		return fmt.Errorf("cannot encode substate-rlp block %v, tx %v; %v", ss.Block, ss.Transaction, err)
+		return fmt.Errorf("cannot encode substate block %v, tx %v; %v", ss.Block, ss.Transaction, err)
 	}
 
 	return db.Put(key, value)
