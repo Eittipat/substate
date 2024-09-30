@@ -7,8 +7,8 @@ import (
 
 	"github.com/Fantom-foundation/Substate/substate"
 	"github.com/Fantom-foundation/Substate/types"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/Fantom-foundation/Substate/types/hash"
+	trlp "github.com/Fantom-foundation/Substate/types/rlp"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -209,35 +209,38 @@ func (entry *Substate_TxMessage_AccessListEntry) decode() ([]byte, [][]byte) {
 	return entry.GetAddress(), entry.GetStorageKeys()
 }
 
-// getContractAddress returns the address of the newly created contract if any.
-// returns nil otherwise.
-func (msg *Substate_TxMessage) getContractAddress() common.Address {
-	var contractAddress common.Address
-
-	// *to==nil means contract creation and thus address of newly created contract
-	to := msg.GetTo()
-	if to == nil {
-		fromAddr := common.BytesToAddress(msg.GetFrom())
-		contractAddress = crypto.CreateAddress(fromAddr, msg.GetNonce())
+// getContractAddress returns, the address.Bytes() of the newly created contract,
+// returns nil if no contract is created.
+func (msg *Substate_TxMessage) getContractAddress() types.Address {
+	// *to==nil means no contract creation
+	if msg.GetTo() != nil {
+		return types.Address{}
 	}
 
-	return contractAddress
+	return createAddress(types.BytesToAddress(msg.GetFrom()), msg.GetNonce())
+}
+
+// createAddress creates an address given the bytes and the nonce
+// mimics crypto.CreateAddress, to avoid cyclical dependency.
+func createAddress(addr types.Address, nonce uint64) types.Address {
+	data, _ := trlp.EncodeToBytes([]interface{}{addr, nonce})
+	return types.BytesToAddress(hash.Keccak256(data)[12:])
 }
 
 // decode converts protobuf-encoded Substate_Result into aida-comprehensible Result
-func (res *Substate_Result) decode(contractAddress common.Address) *substate.Result {
+func (res *Substate_Result) decode(contractAddress types.Address) *substate.Result {
 	logs := make([]*types.Log, len(res.GetLogs()))
 	for i, log := range res.GetLogs() {
 		logs[i] = log.decode()
 	}
 
-	return substate.NewResult(
-		res.GetStatus(),               // Status
-		types.BytesToBloom(res.Bloom), // Bloom
-		logs,                          // Logs
-		types.BytesToAddress(contractAddress.Bytes()), // ContractAddress
-		res.GetGasUsed(), // GasUsed
-	)
+	return &substate.Result{
+		Status:          res.GetStatus(),
+		Bloom:           types.BytesToBloom(res.Bloom),
+		Logs:            logs,
+		ContractAddress: contractAddress,
+		GasUsed:         res.GetGasUsed(),
+	}
 }
 
 func (log *Substate_Result_Log) decode() *types.Log {
