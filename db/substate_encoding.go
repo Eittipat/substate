@@ -98,7 +98,7 @@ func decodeRlp(bytes []byte, lookup codeLookupFunc, block uint64, tx int) (*subs
 	return rlpSubstate.ToSubstate(lookup, block, tx)
 }
 
-// encodeRlp encodes into rlp-encoded bytes the provided substate
+// encodeRlp encodes substate into rlp-encoded bytes 
 func encodeRlp(ss *substate.Substate, block uint64, tx int) ([]byte, error) {
 	bytes, err := trlp.EncodeToBytes(rlp.NewRLP(ss))
 	if err != nil {
@@ -108,7 +108,7 @@ func encodeRlp(ss *substate.Substate, block uint64, tx int) ([]byte, error) {
 	return bytes, nil
 }
 
-// decodeProtobuf decodes into substate the provided rlp-encoded bytecode
+// decodeProtobuf decodes protobuf-encoded bytecode into substate
 func decodeProtobuf(bytes []byte, lookup codeLookupFunc, block uint64, tx int) (*substate.Substate, error) {
 	pbSubstate := &pb.Substate{}
 	if err := proto.Unmarshal(bytes, pbSubstate); err != nil {
@@ -118,7 +118,7 @@ func decodeProtobuf(bytes []byte, lookup codeLookupFunc, block uint64, tx int) (
 	return pbSubstate.Decode(lookup, block, tx)
 }
 
-// encodeRlp encodes into rlp-encoded bytes the provided substate
+// encodeProtobuf encodes substate into protobuf-encoded bytes 
 func encodeProtobuf(ss *substate.Substate, block uint64, tx int) ([]byte, error) {
 	bytes, err := proto.Marshal(pb.Encode(ss))
 	if err != nil {
