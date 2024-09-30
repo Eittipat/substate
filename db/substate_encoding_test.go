@@ -44,18 +44,16 @@ func TestSubstateEncoding_NilEncodingDefaultsToRlp(t *testing.T) {
 		t.Errorf("cannot open db; %v", err)
 	}
 
-	if got := db.GetSubstateEncoding(); got != "" {
+	// purposely never set encoding
+
+	// defaults to rlp
+	if got := db.GetSubstateEncoding(); got != "rlp" {
 		t.Fatalf("substate encoding should be nil, got: %s", got)
 	}
 
-	// purposely never set encoding
 	_, err = db.decodeToSubstate(testRlp.bytes, testRlp.blk, testRlp.tx)
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	if got := db.GetSubstateEncoding(); got != "rlp" {
-		t.Fatalf("db should default to rlp, got: %s", got)
 	}
 }
 
@@ -92,8 +90,8 @@ func TestSubstateEncoding_UnsupportedEncodingThrowsError(t *testing.T) {
 	}
 
 	_, err = db.SetSubstateEncoding("EncodingNotSupported")
-	if err == nil || !strings.Contains(err.Error(), "Encoding not supported") {
-		t.Error("Encoding not supported, but no error")
+	if err == nil || !strings.Contains(err.Error(), "encoding not supported") {
+		t.Error("encoding not supported, but no error")
 	}
 }
 

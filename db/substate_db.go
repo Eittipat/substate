@@ -61,11 +61,15 @@ func NewSubstateDB(path string, o *opt.Options, wo *opt.WriteOptions, ro *opt.Re
 }
 
 func MakeDefaultSubstateDB(db *leveldb.DB) SubstateDB {
-	return &substateDB{&codeDB{&baseDB{backend: db}}, nil}
+	sdb := &substateDB{&codeDB{&baseDB{backend: db}}, nil}
+	sdb, _ = sdb.SetSubstateEncoding("default")
+	return sdb
 }
 
 func MakeDefaultSubstateDBFromBaseDB(db BaseDB) SubstateDB {
-	return &substateDB{&codeDB{&baseDB{backend: db.getBackend()}}, nil}
+	sdb := &substateDB{&codeDB{&baseDB{backend: db.getBackend()}}, nil}
+	sdb, _ = sdb.SetSubstateEncoding("default")
+	return sdb
 }
 
 // NewReadOnlySubstateDB creates a new instance of read-only SubstateDB.
@@ -74,7 +78,9 @@ func NewReadOnlySubstateDB(path string) (SubstateDB, error) {
 }
 
 func MakeSubstateDB(db *leveldb.DB, wo *opt.WriteOptions, ro *opt.ReadOptions) SubstateDB {
-	return &substateDB{&codeDB{&baseDB{backend: db, wo: wo, ro: ro}}, nil}
+	sdb := &substateDB{&codeDB{&baseDB{backend: db, wo: wo, ro: ro}}, nil}
+	sdb, _ = sdb.SetSubstateEncoding("default")
+	return sdb
 }
 
 func newSubstateDB(path string, o *opt.Options, wo *opt.WriteOptions, ro *opt.ReadOptions) (*substateDB, error) {
@@ -82,7 +88,10 @@ func newSubstateDB(path string, o *opt.Options, wo *opt.WriteOptions, ro *opt.Re
 	if err != nil {
 		return nil, err
 	}
-	return &substateDB{base, nil}, nil
+
+	sdb := &substateDB{base, nil}
+	sdb, _ = sdb.SetSubstateEncoding("default")
+	return sdb, nil
 }
 
 type substateDB struct {

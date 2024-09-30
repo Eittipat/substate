@@ -14,13 +14,13 @@ import (
 // SetSubstateEncoding sets the runtime encoding/decoding behavior of substateDB
 // intended usage:
 //
-//		db := &substateDB{..}
+//	db := &substateDB{..} // default to rlp
 //	     db, err := db.SetSubstateEncoding(<schema>) // set encoding
 //	     db.GetSubstateDecoder() // returns configured encoding
 func (db *substateDB) SetSubstateEncoding(schema string) (*substateDB, error) {
 	encoding, err := newSubstateEncoding(schema, db.GetCode)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to set decoder; %w", err)
+		return nil, fmt.Errorf("failed to set decoder; %w", err)
 	}
 
 	db.encoding = encoding
@@ -73,24 +73,18 @@ func newSubstateEncoding(encoding string, lookup codeLookupFunc) (*substateEncod
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("Encoding not supported: %s", encoding)
+		return nil, fmt.Errorf("encoding not supported: %s", encoding)
 
 	}
 }
 
 // decodeSubstate defensively defaults to "default" if nil
 func (db *substateDB) decodeToSubstate(bytes []byte, block uint64, tx int) (*substate.Substate, error) {
-	if db.encoding == nil {
-		db.SetSubstateEncoding("default")
-	}
 	return db.encoding.decode(bytes, block, tx)
 }
 
 // encodeSubstate defensively defaults to "default" if nil
 func (db *substateDB) encodeSubstate(ss *substate.Substate, block uint64, tx int) ([]byte, error) {
-	if db.encoding == nil {
-		db.SetSubstateEncoding("default")
-	}
 	return db.encoding.encode(ss, block, tx)
 }
 
