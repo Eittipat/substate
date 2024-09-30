@@ -1,24 +1,36 @@
 package protobuf
 
 import (
+	"fmt"
+
 	"github.com/Fantom-foundation/Substate/substate"
 	"github.com/Fantom-foundation/Substate/types"
 	"github.com/Fantom-foundation/Substate/types/hash"
+	"google.golang.org/protobuf/proto"
 )
 
 // Encode converts aida-substate into protobuf-encoded message
-func Encode(ss *substate.Substate) *Substate {
+func Encode(ss *substate.Substate, block uint64, tx int) ([]byte, error) {
+	bytes, err := proto.Marshal(toProtobufSubstate(ss))
+	if err != nil {
+		return nil, fmt.Errorf("cannot encode substate into protobuf block: %v,tx %v; %w", block, tx, err)
+	}
+
+	return bytes, nil
+}
+
+func toProtobufSubstate(ss *substate.Substate) *Substate {
 	return &Substate{
-		InputAlloc:  encodeWorldState(ss.InputSubstate),
-		OutputAlloc: encodeWorldState(ss.OutputSubstate),
-		BlockEnv:    encodeEnv(ss.Env),
-		TxMessage:   encodeMessage(ss.Message),
-		Result:      encodeResult(ss.Result),
+		InputAlloc:  toProtobufAlloc(ss.InputSubstate),
+		OutputAlloc: toProtobufAlloc(ss.OutputSubstate),
+		BlockEnv:    toProtobufBlockEnv(ss.Env),
+		TxMessage:   toProtobufTxMessage(ss.Message),
+		Result:      toProtobufResult(ss.Result),
 	}
 }
 
-// encodeWorldState converts substate.WorldState into protobuf-encoded Substate_Alloc
-func encodeWorldState(sw substate.WorldState) *Substate_Alloc {
+// toProtobufAlloc converts substate.WorldState into protobuf-encoded Substate_Alloc
+func toProtobufAlloc(sw substate.WorldState) *Substate_Alloc {
 	world := make([]*Substate_AllocEntry, 0, len(sw))
 	for addr, acct := range sw {
 		storage := make([]*Substate_Account_StorageEntry, 0, len(acct.Storage))
@@ -46,7 +58,7 @@ func encodeWorldState(sw substate.WorldState) *Substate_Alloc {
 }
 
 // encode converts substate.Env into protobuf-encoded Substate_BlockEnv
-func encodeEnv(se *substate.Env) *Substate_BlockEnv {
+func toProtobufBlockEnv(se *substate.Env) *Substate_BlockEnv {
 	blockHashes := make([]*Substate_BlockEnv_BlockHashEntry, 0, len(se.BlockHashes))
 	for number, hash := range se.BlockHashes {
 		blockHashes = append(blockHashes, &Substate_BlockEnv_BlockHashEntry{
@@ -69,7 +81,7 @@ func encodeEnv(se *substate.Env) *Substate_BlockEnv {
 }
 
 // encode converts substate.Message into protobuf-encoded Substate_TxMessage
-func encodeMessage(sm *substate.Message) *Substate_TxMessage {
+func toProtobufTxMessage(sm *substate.Message) *Substate_TxMessage {
 	dt := Substate_TxMessage_TXTYPE_LEGACY
 	txType := &dt
 	if sm.ProtobufTxType != nil {
@@ -118,7 +130,7 @@ func (entry *Substate_TxMessage_AccessListEntry) encode(sat *types.AccessTuple) 
 }
 
 // encode converts substate.Results into protobuf-encoded Substate_Result
-func encodeResult(sr *substate.Result) *Substate_Result {
+func toProtobufResult(sr *substate.Result) *Substate_Result {
 	logs := make([]*Substate_Result_Log, len(sr.Logs))
 	for i, log := range sr.Logs {
 		logs[i].encode(log)

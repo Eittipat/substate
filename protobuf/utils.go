@@ -55,5 +55,5 @@ func BytesToBigInt(b []byte) *big.Int {
 	if b == nil {
 		return nil
 	}
-	return  new(big.Int).SetBytes(b)
+	return new(big.Int).SetBytes(b)
 }

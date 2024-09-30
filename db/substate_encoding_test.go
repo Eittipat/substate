@@ -7,7 +7,6 @@ import (
 	pb "github.com/Fantom-foundation/Substate/protobuf"
 	"github.com/Fantom-foundation/Substate/rlp"
 	trlp "github.com/Fantom-foundation/Substate/types/rlp"
-	"google.golang.org/protobuf/proto"
 )
 
 type encTest struct {
@@ -17,19 +16,14 @@ type encTest struct {
 }
 
 var (
-	simplePb, _ = proto.Marshal(pb.Encode(testSubstate))
-	testPb      = encTest{
-		bytes: simplePb,
-		blk:   testSubstate.Block,
-		tx:    testSubstate.Transaction,
-	}
+	blk = testSubstate.Block
+	tx  = testSubstate.Transaction
+
+	simplePb, _ = pb.Encode(testSubstate, blk, tx)
+	testPb      = encTest{bytes: simplePb, blk: blk, tx: tx}
 
 	simpleRlp, _ = trlp.EncodeToBytes(rlp.NewRLP(testSubstate))
-	testRlp      = encTest{
-		bytes: simpleRlp,
-		blk:   testSubstate.Block,
-		tx:    testSubstate.Transaction,
-	}
+	testRlp      = encTest{bytes: simpleRlp, blk: blk, tx: tx}
 
 	supportedEncoding = map[string]encTest{
 		"rlp":      testRlp,

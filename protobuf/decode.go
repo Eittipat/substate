@@ -14,7 +14,7 @@ import (
 
 type getCodeFunc = func(types.Hash) ([]byte, error)
 
-// Decode converts protobuf-encoded Substate into aida-comprehensible substate
+// Decode converts protobuf-encoded bytes into aida substate
 func (s *Substate) Decode(lookup getCodeFunc, block uint64, tx int) (*substate.Substate, error) {
 	input, err := s.GetInputAlloc().decode(lookup)
 	if err != nil {
