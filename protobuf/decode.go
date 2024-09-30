@@ -12,10 +12,10 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-type dbGetCode = func(types.Hash) ([]byte, error)
+type getCodeFunc = func(types.Hash) ([]byte, error)
 
 // Decode converts protobuf-encoded Substate into aida-comprehensible substate
-func (s *Substate) Decode(lookup dbGetCode, block uint64, tx int) (*substate.Substate, error) {
+func (s *Substate) Decode(lookup getCodeFunc, block uint64, tx int) (*substate.Substate, error) {
 	input, err := s.GetInputAlloc().decode(lookup)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (s *Substate) Decode(lookup dbGetCode, block uint64, tx int) (*substate.Sub
 }
 
 // decode converts protobuf-encoded Substate_Alloc into aida-comprehensible WorldState
-func (alloc *Substate_Alloc) decode(lookup dbGetCode) (*substate.WorldState, error) {
+func (alloc *Substate_Alloc) decode(lookup getCodeFunc) (*substate.WorldState, error) {
 	world := make(substate.WorldState, len(alloc.GetAlloc()))
 
 	for _, entry := range alloc.GetAlloc() {
@@ -115,7 +115,7 @@ func (entry *Substate_BlockEnv_BlockHashEntry) decode() (uint64, []byte) {
 }
 
 // decode converts protobuf-encoded Substate_TxMessage into aida-comprehensible Message
-func (msg *Substate_TxMessage) decode(lookup dbGetCode) (*substate.Message, error) {
+func (msg *Substate_TxMessage) decode(lookup getCodeFunc) (*substate.Message, error) {
 
 	// to=nil means contract creation
 	var pTo *types.Address = nil
