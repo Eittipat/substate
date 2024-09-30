@@ -91,7 +91,7 @@ func toProtobufTxMessage(sm *substate.Message) *Substate_TxMessage {
 
 	accessList := make([]*Substate_TxMessage_AccessListEntry, len(sm.AccessList))
 	for i, entry := range sm.AccessList {
-		accessList[i].encode(&entry)
+		accessList[i].toProtobufAccessListEntry(&entry)
 	}
 
 	blobHashes := make([][]byte, len(sm.BlobHashes))
@@ -116,8 +116,8 @@ func toProtobufTxMessage(sm *substate.Message) *Substate_TxMessage {
 	}
 }
 
-// encode converts types.AccessTuple into protobuf-encoded Substate_TxMessage_AccessListEntry
-func (entry *Substate_TxMessage_AccessListEntry) encode(sat *types.AccessTuple) {
+// toProtobufAccessListEntry converts types.AccessTuple into protobuf-encoded Substate_TxMessage_AccessListEntry
+func (entry *Substate_TxMessage_AccessListEntry) toProtobufAccessListEntry(sat *types.AccessTuple) {
 	keys := make([][]byte, len(sat.StorageKeys))
 	for i, key := range sat.StorageKeys {
 		keys[i] = key.Bytes()
@@ -133,7 +133,7 @@ func (entry *Substate_TxMessage_AccessListEntry) encode(sat *types.AccessTuple) 
 func toProtobufResult(sr *substate.Result) *Substate_Result {
 	logs := make([]*Substate_Result_Log, len(sr.Logs))
 	for i, log := range sr.Logs {
-		logs[i].encode(log)
+		logs[i].toProtobufLog(log)
 	}
 
 	return &Substate_Result{
@@ -144,8 +144,8 @@ func toProtobufResult(sr *substate.Result) *Substate_Result {
 	}
 }
 
-// encode converts types.Log into protobuf-encoded Substate_Result_log
-func (log *Substate_Result_Log) encode(sl *types.Log) {
+// toProtobufLog converts types.Log into protobuf-encoded Substate_Result_log
+func (log *Substate_Result_Log) toProtobufLog(sl *types.Log) {
 	topics := make([][]byte, len(sl.Topics))
 	for i, topic := range sl.Topics {
 		topics[i] = topic.Bytes()
