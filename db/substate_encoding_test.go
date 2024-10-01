@@ -4,17 +4,30 @@ import (
 	"strings"
 	"testing"
 
+	pb "github.com/Fantom-foundation/Substate/protobuf"
 	"github.com/Fantom-foundation/Substate/rlp"
 	trlp "github.com/Fantom-foundation/Substate/types/rlp"
 )
 
-var (
-	testRlp, _ = trlp.EncodeToBytes(rlp.NewRLP(testSubstate))
-	testBlk    = testSubstate.Block
-	testTx     = testSubstate.Transaction
+type encTest struct {
+	bytes []byte
+	blk   uint64
+	tx    int
+}
 
-	supportedEncoding = map[string][]byte{
-		"rlp": testRlp,
+var (
+	blk = testSubstate.Block
+	tx  = testSubstate.Transaction
+
+	simplePb, _ = pb.Encode(testSubstate, blk, tx)
+	testPb      = encTest{bytes: simplePb, blk: blk, tx: tx}
+
+	simpleRlp, _ = trlp.EncodeToBytes(rlp.NewRLP(testSubstate))
+	testRlp      = encTest{bytes: simpleRlp, blk: blk, tx: tx}
+
+	supportedEncoding = map[string]encTest{
+		"rlp":      testRlp,
+		"protobuf": testPb,
 	}
 )
 
@@ -25,40 +38,41 @@ func TestSubstateEncoding_NilEncodingDefaultsToRlp(t *testing.T) {
 		t.Errorf("cannot open db; %v", err)
 	}
 
-	if got := db.GetSubstateEncoding(); got != "" {
+	// purposely never set encoding
+
+	// defaults to rlp
+	if got := db.GetSubstateEncoding(); got != "rlp" {
 		t.Fatalf("substate encoding should be nil, got: %s", got)
 	}
 
-	// purposely never set encoding
-	_, err = db.decodeToSubstate(testRlp, testBlk, testTx)
+	_, err = db.decodeToSubstate(testRlp.bytes, testRlp.blk, testRlp.tx)
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	if got := db.GetSubstateEncoding(); got != "rlp" {
-		t.Fatalf("db should default to rlp, got: %s", got)
 	}
 }
 
 func TestSubstateEncoding_DefaultEncodingDefaultsToRlp(t *testing.T) {
-	path := t.TempDir() + "test-db"
-	db, err := newSubstateDB(path, nil, nil, nil)
-	if err != nil {
-		t.Errorf("cannot open db; %v", err)
-	}
+	defaultKeywords := []string{"", "default"}
+	for _, defaultEncoding := range defaultKeywords {
+		path := t.TempDir() + "test-db-" + defaultEncoding
+		db, err := newSubstateDB(path, nil, nil, nil)
+		if err != nil {
+			t.Errorf("cannot open db; %v", err)
+		}
 
-	_, err = db.SetSubstateEncoding("default")
-	if err != nil {
-		t.Fatal("default is supportet, but error")
-	}
+		_, err = db.SetSubstateEncoding(defaultEncoding)
+		if err != nil {
+			t.Fatalf("Default encoding '%s' must be supported, but error", defaultEncoding)
+		}
 
-	_, err = db.decodeToSubstate(testRlp, testBlk, testTx)
-	if err != nil {
-		t.Fatal(err)
-	}
+		_, err = db.decodeToSubstate(testRlp.bytes, testRlp.blk, testRlp.tx)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if got := db.GetSubstateEncoding(); got != "rlp" {
-		t.Fatalf("db should default to rlp, got: %s", got)
+		if got := db.GetSubstateEncoding(); got != "rlp" {
+			t.Fatalf("db should default to rlp, got: %s", got)
+		}
 	}
 }
 
@@ -70,30 +84,30 @@ func TestSubstateEncoding_UnsupportedEncodingThrowsError(t *testing.T) {
 	}
 
 	_, err = db.SetSubstateEncoding("EncodingNotSupported")
-	if err == nil || !strings.Contains(err.Error(), "Encoding not supported") {
-		t.Error("Encoding not supported, but no error")
+	if err == nil || !strings.Contains(err.Error(), "encoding not supported") {
+		t.Error("encoding not supported, but no error")
 	}
 }
 
 func TestSubstateEncoding_TestDb(t *testing.T) {
-	path := t.TempDir() + "test-db"
-	db, err := newSubstateDB(path, nil, nil, nil)
-	if err != nil {
-		t.Errorf("cannot open db; %v", err)
-	}
+	for encoding, et := range supportedEncoding {
+		path := t.TempDir() + "test-db-" + encoding
+		db, err := newSubstateDB(path, nil, nil, nil)
+		if err != nil {
+			t.Errorf("cannot open db; %v", err)
+		}
 
-	for encoding, bytes := range supportedEncoding {
-		_, err = db.SetSubstateEncoding(encoding)
+		db, err = db.SetSubstateEncoding(encoding)
 		if err != nil {
 			t.Error(err)
 		}
 
-		ss, err := db.decodeToSubstate(bytes, testBlk, testTx)
+		ss, err := db.decodeToSubstate(et.bytes, et.blk, et.tx)
 		if err != nil {
 			t.Error(err)
 		}
 
-		err = addCustomSubstate(db, testBlk, ss)
+		err = addCustomSubstate(db, et.blk, ss)
 		if err != nil {
 			t.Error(err)
 		}
@@ -103,24 +117,24 @@ func TestSubstateEncoding_TestDb(t *testing.T) {
 }
 
 func TestSubstateEncoding_TestIterator(t *testing.T) {
-	path := t.TempDir() + "test-db"
-	db, err := newSubstateDB(path, nil, nil, nil)
-	if err != nil {
-		t.Errorf("cannot open db; %v", err)
-	}
+	for encoding, et := range supportedEncoding {
+		path := t.TempDir() + "test-db-" + encoding
+		db, err := newSubstateDB(path, nil, nil, nil)
+		if err != nil {
+			t.Errorf("cannot open db; %v", err)
+		}
 
-	for encoding, bytes := range supportedEncoding {
 		_, err = db.SetSubstateEncoding(encoding)
 		if err != nil {
 			t.Error(err)
 		}
 
-		ss, err := db.decodeToSubstate(bytes, testBlk, testTx)
+		ss, err := db.decodeToSubstate(et.bytes, et.blk, et.tx)
 		if err != nil {
 			t.Error(err)
 		}
 
-		err = addCustomSubstate(db, testBlk, ss)
+		err = addCustomSubstate(db, et.blk, ss)
 		if err != nil {
 			t.Error(err)
 		}
