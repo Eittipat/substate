@@ -224,7 +224,7 @@ func (msg *Substate_TxMessage) getContractAddress() types.Address {
 // mimics crypto.CreateAddress, to avoid cyclical dependency.
 func createAddress(addr types.Address, nonce uint64) types.Address {
 	data, _ := trlp.EncodeToBytes([]interface{}{addr, nonce})
-	return types.BytesToAddress(hash.Keccak256(data)[12:])
+	return types.BytesToAddress(hash.Keccak256Hash(data).Bytes()[12:])
 }
 
 // decode converts protobuf-encoded Substate_Result into aida-comprehensible Result
