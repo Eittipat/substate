@@ -49,6 +49,17 @@ type SubstateDB interface {
 	GetSubstateEncoding() string
 }
 
+// NewCustomSubstateDB creates new instance of SubstateDB with custom options.
+func NewCustomSubstateDB(path string, cache int, handles int, readonly bool) (SubstateDB, error) {
+	o := &opt.Options{
+		OpenFilesCacheCapacity: handles,
+		BlockCacheCapacity:     cache / 2 * opt.MiB,
+		WriteBuffer:            cache / 4 * opt.MiB,
+		ReadOnly:               readonly,
+	}
+	return newSubstateDB(path, o, nil, nil)
+}
+
 // NewDefaultSubstateDB creates new instance of SubstateDB with default options.
 func NewDefaultSubstateDB(path string) (SubstateDB, error) {
 	return newSubstateDB(path, nil, nil, nil)
